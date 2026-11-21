@@ -1,9 +1,32 @@
-f=require('fs'),E=process.env,I=E.MAKEFUN_INPUT_DIR||'/input',O=E.MAKEFUN_OUTPUT_DIR||'/output'
-S=t=>{let W=t.indexOf('\n'),J=t.replace(/\n/g,''),F=[],G=[],B=[],p=0
-;[...J].forEach((c,i)=>{if(c!='#'){F[i]=1;G[i]=c=='.'||c=='*';if(c=='$'||c=='*')B.push(i);if(c=='@')p=i}})
-let D=[-W,W,-1,1],L='udlr',Y=p/W|0,A=(a,fl,b)=>{let P=new Map([[a,'']]),q=[a],mn=a;for(let c of q)for(let k=4;k--;){let n=c+D[k];if(fl[n]&&!b.includes(n)&&!P.has(n))P.set(n,P.get(c)+L[k]),q.push(n),n<mn&&(mn=n)}P.m=mn;return P}
-let V=[],M=[]
-for(let r of[Y-1,Y+1])for(let x=0;x<W;x++){let dr=r*W+x;if(!F[dr]||V[dr])continue;let C=[],q=[dr],fl=[];V[dr]=1;for(let c of q){C.push(c);fl[c]=1;for(let d of D){let n=c+d;if(F[n]&&(n/W|0)!=Y&&!V[n])V[n]=1,q.push(n)}}let e=Y*W+dr%W;fl[e]=1;M.push([fl,B.filter(x=>fl[x]),C.filter(x=>G[x]),e])}
-let m='',pp=p,pb=[]
-for(let z=0;z<M.length;z++){let[fl,ib,g,e]=M[z];m+=A(pp,F,pb).get(e)||'';pp=e;let sb=ib.sort(),lv=new Set(g);for(let t of g)for(let d of D){let s=t-d;if(fl[s]&&fl[t-2*d]&&!lv.has(s))lv.add(s),g.push(s)}let Q=[[sb,pp]],K=new Map,gl=sb.every(x=>G[x])?0:-1;if(gl<0){K.set(sb+':'+A(pp,fl,sb).m,0);for(let qi=0;qi<Q.length&&gl<0;qi++){let[b,pl]=Q[qi],Rg=A(pl,fl,b);for(let bi=0;bi<b.length&&gl<0;bi++)for(let k=4;k--;){let d=D[k],x=b[bi],u=x+d;if(!lv.has(u)||b.includes(u)||!Rg.has(x-d))continue;let nb=[...b];nb[bi]=u;nb.sort();let R2=A(x,fl,nb),ky=nb+':'+R2.m;if(K.has(ky))continue;K.set(ky,Q.length);Q.push([nb,x,qi,k]);if(nb.every(x=>G[x])&&(!M[z+1]||R2.has(e)))gl=Q.length-1}if(Q.length>1e5)break}}if(gl<0)return'';let pu=[];for(let i=gl;i>0;){let v=Q[i];pu.unshift([v[1],v[3]]);i=v[2]}for(let[x,k]of pu){m+=A(pp,fl,sb).get(x-D[k])||'';m+=L[k];sb[sb.indexOf(x)]=x+D[k];pp=x}pb=sb}return m}
-for(let id of f.readdirSync(I)){let m='';try{m=S(f.readFileSync(I+'/'+id+'/level.txt')+'')}catch(e){}f.mkdirSync(O+'/'+id,{recursive:true});f.writeFileSync(O+'/'+id+'/solution.txt',m+'\n')}
+import fs from'node:fs'
+let e=process.env,A=e.MAKEFUN_INPUT_DIR||'/input',B=e.MAKEFUN_OUTPUT_DIR||'/output',M
+for(let i=1;i<6;i++){
+let d='i00'+i,L=fs.readFileSync(A+'/'+d+'/level.txt','utf8'),W=L.indexOf('\n'),G=L.replace(/\n/g,''),P=G.indexOf('@'),Y=P/W|0,K=[1,-1,W,-W],V='rldu',Z='',x=P%W
+let F=(s,f,p)=>{if(!p){p={[s]:''};M=s}M=s<M?s:M;for(let k in K){let n=s+K[k];if(f(n)&&!(n in p)){p[n]=p[s]+V[k];F(n,f,p)}}return p}
+for(let X=0;X<W;X++)for(let D of[-1,1]){
+let r=(Y+D)*W+X
+if(G[r]=='#'||!G[r])continue
+let R=F(r,n=>G[n]&&G[n]!='#'&&(n/W|0)^Y),o=Y*W+X,bx=[],gl=new Set
+for(let j in G)if(j in R){let c=G[j];if(c=='$'||c=='*')bx.push(+j);if(c=='.'||c=='*')gl.add(+j)}
+Z+=x<X?'r'.repeat(X-x):'l'.repeat(x-X);x=X
+let f2=n=>n in R||n==o,lv=new Set(gl),lq=[...gl]
+for(let t of lq)for(let k in K){let s=t-K[k];if(f2(s)&&f2(s-K[k])&&!lv.has(s)){lv.add(s);lq.push(s)}}
+let q=[[bx,o,'']],sn={},u=0,fp=0
+for(let st of q){
+let[b,p,pa]=st
+if(b.every(i=>gl.has(i))){u=pa;fp=p;break}
+let pm=F(p,n=>f2(n)&&!b.includes(n)),ky=b+','+M
+if(sn[ky])continue
+sn[ky]=1
+for(let j in b)for(let k in K){
+let ps=b[j]-K[k],tg=b[j]+K[k]
+if(ps in pm&&tg in R&&!b.includes(tg)){
+let nb=[...b];nb[j]=tg;nb.sort((a,c)=>a-c)
+if(nb.every(i=>lv.has(i)))q.push([nb,b[j],pa+pm[ps]+V[k]])
+}
+}
+}
+Z+=u+F(fp,n=>n in R&&!gl.has(n))[r]+V[D<0?2:3]
+}
+fs.mkdirSync(B+'/'+d);fs.writeFileSync(B+'/'+d+'/solution.txt',Z)
+}
